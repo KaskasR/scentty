@@ -93,7 +93,7 @@ Busy handling: one blend at a time. If the machine is busy, the phone shows "you
     - `GET /api/admin/calibration` → `{ml_per_s: [o, l, c, a]}`; `POST /api/admin/calibration {pump, ml_per_s}` → saved to NVS
     - `POST /api/admin/led {pattern: "scents" | "rainbow" | "white" | "off"}`
 - **Firmware** (PlatformIO, Arduino framework, `board = esp32dev`):
-  - ESPAsyncWebServer + AsyncTCP (the maintained mathieucarbou forks, now published as `esp32async/*`), DNSServer, ArduinoJson 7, LittleFS, Preferences (NVS) for calibration, Adafruit NeoPixel (or FastLED), TFT_eSPI or Adafruit_ILI9341.
+  - ESPAsyncWebServer + AsyncTCP (the maintained mathieucarbou forks, now published as `esp32async/*`), DNSServer, ArduinoJson 7, LittleFS, Preferences (NVS) for calibration, Adafruit NeoPixel, Adafruit_ILI9341 + Adafruit GFX (both verified on this hardware, see `HARDWARE.md`).
   - Partition table `huge_app.csv` (3 MB app, 896 KB LittleFS, no OTA): the default layout left the firmware at 93% of its slot.
   - Code layout: `src/config.h` (all pins/limits), `pumps.cpp` (state machine), `calibration.cpp` (NVS), `web.cpp` (AP, captive portal, API). Bench test kept as env `bench` (`firmware/bench/`). Host-side tests for the state machine: `firmware/test_host/run.sh`.
   - **Non-blocking pump state machine** (millis-based; no `delay()` in the dispense path) so the web server stays responsive.
@@ -109,13 +109,15 @@ Busy handling: one blend at a time. If the machine is busy, the phone shows "you
 
 ## 6. Hardware (as built)
 
-- **MCU:** Freenove **ESP32-WROVER** dev board on the Freenove GPIO extension board, **camera removed** (camera occupies GPIO 4,5,18,19,21,22,23,25,26,27). **Never use GPIO 16/17** (PSRAM). USB-C, CH340 USB chip.
-- **Pump drivers:** 4× **XY-MOS** dual-MOSFET modules. VIN± from 12V supply, OUT± to pump, TRIG/PWM from ESP32 (active HIGH, 3.3–20 V), module GND tied to VIN− on-board (gives the shared ground). 1N5822 Schottky flyback diode across each pump (stripe on OUT+). **Stage 1 (pump 1) verified working Nov 8.** Stage 2 (all four) in progress.
-- **Pumps:** 12 V peristaltic (Ø29 motor, 54.5 mm flange, screw holes 48.5 mm, tube barbs point up). Tubing 3 mm ID × 5 mm OD. Peristaltic = no siphoning when off.
-- **Power:** 12 V 5 A adapter → pump modules. ESP32/LEDs/screen from a separate 5 V battery (USB during bench work). Grounds are common.
-- **LEDs:** 5× WS2812B pixels (SEZO 60/m strip, cut), **data GPIO 13** via ~330 Ω, 5 V from battery, ~1000 µF across 5V/GND. Order: pixel 0–3 under reservoirs 1–4, pixel 4 under the output bottle.
-- **Screen:** 2.8" ILI9341 SPI TFT (DIANN, MSP2807-style, 86×50 mm board; touch + SD unused). Pins: SCK 18, MOSI 23, CS 5, **DC 21**, RST 4, VCC 3.3 V, LED (backlight) 3.3 V.
-- **Pin map summary:** pumps 25/26/27/32 · LEDs 13 · TFT 18/23/5/21/4 · avoid 16/17, 6–11, and input-only 34–39.
+**`HARDWARE.md` is the authoritative, as-built wiring reference and wins if it disagrees with this section.** This is a summary.
+
+- **MCU:** Freenove **ESP32-WROVER** dev board (4 MB flash + PSRAM) on the Freenove GPIO extension board, **camera unplugged** (camera occupies GPIO 4,5,18,19,21,22,23,25,26,27). **Never use GPIO 16/17** (PSRAM) or 6–11 (flash); 34–39 are input-only. GPIO 2 (onboard LED) intentionally unused. USB-C, CH340 USB chip. Every output pin must be configured and driven explicitly (an unconfigured GPIO 14 rested HIGH).
+- **Pump drivers:** 4× **XY-MOS** dual-MOSFET modules, low-side switching. VIN± from 12 V supply, OUT± to pump, TRIG/PWM from ESP32 (active HIGH, 3.3–20 V), module GND tied to VIN− on-board (gives the shared ground). 1N5822 Schottky flyback diode across each pump (stripe on OUT+). **All four channels verified with water** (bench test, 2 s on / 2 s off each).
+- **Pumps:** 12 V peristaltic (Ø29 motor, 54.5 mm flange, screw holes 48.5 mm, tube barbs point up). Tubing 3 mm ID × 5 mm OD (~0.7 mL per 10 cm, so tubes must be primed). Peristaltic = no siphoning when off. Flow not yet calibrated; measure per pump and store in NVS.
+- **Power:** 12 V 5 A adapter → pump modules (one pump runs at a time). ESP32 + LED strip from a separate 5 V battery into the board's 5V pin (USB during bench work); TFT from the board's 3.3 V regulator. Grounds are common. No power switch.
+- **LEDs (wired, test pending):** **one continuous 23-LED WS2812B strip** (SEZO 60/m, uncut, ~383 mm) on the plinth base under the bottle row. **Data GPIO 13** via 300 Ω, 5 V + GND from the board, 220 µF across 5V/GND. **LED 0 is on the right** (by the electronics bay); data runs right → left. Adafruit NeoPixel, `NEO_GRB + NEO_KHZ800` (color order unconfirmed). **Zone lighting:** only the LEDs under each bottle light up, from one zone table in config; all others stay off. Zones (guessed from CAD, confirm with a chase test once installed): output 1–3, alcohol 7–8, cedar 11–13, lavender 16–17, orange 20–22. **Brightness capped (~60/255)**: full white on all 23 is ~1.4 A, too much for the 5 V source.
+- **Screen (verified):** 2.8" ILI9341 SPI TFT, 240×320 (MSP2807-style, 86×50 mm board; touch + SD unused). Pins: SCK 18, MOSI 23, CS 5, **DC 21**, RST 4, VCC 3.3 V, LED (backlight) 3.3 V (always on). Adafruit_ILI9341 + Adafruit GFX on hardware SPI, `setRotation(1)` → landscape 320×240.
+- **Pin map summary:** pumps 25/26/27/32 · LED strip 13 · TFT 18/23/5/21/4 · free if needed: 33, 19, 22, 14 (drive explicitly), 12 (strapping, avoid) · never 16/17, 6–11.
 
 ## 7. Chassis (CAD done, cutting this week)
 
