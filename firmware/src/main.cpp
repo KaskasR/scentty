@@ -1,52 +1,32 @@
-// ScenTTy - Stage 1 bench test: one pump channel, then all four.
+// ScenTTy firmware: WiFi + captive portal + web app + pump control.
+// See SPEC.md. The pump bench test lives in firmware/bench/ (env "bench").
 //
-// Hardware: Freenove ESP32-WROVER (camera REMOVED) + XY-MOS MOSFET modules.
-// Turns each wired pump on for 2 s, one at a time, forever, and prints what
-// it's doing to the Serial Monitor (115200 baud). Test with WATER, not oils.
-//
-// Wiring per pump (one XY-MOS module each):
-//   12V supply (+) -> VIN+        12V supply (-) -> VIN-
-//   pump (+)       -> OUT+        pump (-)       -> OUT-
-//   ESP32 GPIO     -> TRIG/PWM    ESP32 GND      -> module GND
-//   flyback diode across the pump: stripe -> OUT+, other end -> OUT-
-// The module's GND pin is tied to VIN- on the board, so ESP32 GND -> module GND
-// also gives you the shared ground the switch needs.
+// Serial monitor (115200) shows every state change, e.g.
+//   [blend] job 3 accepted: 3.7 / 2.0 / 8.7 / 9.6 mL
+//   [pump] orange on: 3.7 mL at 1.170 mL/s = 3.16 s
 
 #include <Arduino.h>
+#include "config.h"
+#include "calibration.h"
+#include "pumps.h"
+#include "web.h"
 
-// Freenove WROVER notes:
-//  - Unplug the camera ribbon: the camera uses GPIO 4,5,18,19,21,22,23,25,26,27.
-//  - GPIO 16 and 17 are used by the WROVER's PSRAM: never use them.
-// These four stay clear of the screen's SPI pins and the LED data pin (13).
-const int PUMP_PINS[4] = {25, 26, 27, 32};
-const char *PUMP_NAMES[4] = {"orange", "lavender", "cedarwood", "alcohol"};
-
-// Start with ONE pump wired (set to 1). When it works, wire the rest and set to 4.
-const int PUMPS_WIRED = 1;
-
-const unsigned long ON_MS = 2000;
-const unsigned long OFF_MS = 2000;
+Calibration calibration;
+Dispenser dispenser(calibration);
 
 void setup() {
-  // Drive every pump pin LOW first thing so nothing twitches at boot.
-  for (int i = 0; i < 4; i++) {
-    pinMode(PUMP_PINS[i], OUTPUT);
-    digitalWrite(PUMP_PINS[i], LOW);
-  }
+  dispenser.begin();  // FIRST: every pump pin LOW before anything else happens
+
   Serial.begin(115200);
-  delay(500);
-  Serial.println();
-  Serial.println("ScenTTy bench test - pumps cycle 2 s on / 2 s off");
+  delay(300);  // let the USB serial connect so the boot log isn't lost (setup only)
+  Serial.println("\n=== ScenTTy ===");
+
+  calibration.begin();
+  webBegin(dispenser, calibration);
+  Serial.println("Ready. Join the ScenTTy WiFi.");
 }
 
 void loop() {
-  for (int i = 0; i < PUMPS_WIRED; i++) {
-    Serial.printf("Pump %d (%s) ON  - GPIO %d\n", i + 1, PUMP_NAMES[i], PUMP_PINS[i]);
-    digitalWrite(PUMP_PINS[i], HIGH);
-    delay(ON_MS);
-
-    digitalWrite(PUMP_PINS[i], LOW);
-    Serial.printf("Pump %d OFF\n", i + 1);
-    delay(OFF_MS);
-  }
+  dispenser.update();  // non-blocking: checks the clock, flips pumps when it's time
+  webLoop();           // answers DNS queries (the web server runs on its own task)
 }

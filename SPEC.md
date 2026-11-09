@@ -93,10 +93,19 @@ Busy handling: one blend at a time. If the machine is busy, the phone shows "you
     - `GET /api/admin/calibration` → `{ml_per_s: [o, l, c, a]}`; `POST /api/admin/calibration {pump, ml_per_s}` → saved to NVS
     - `POST /api/admin/led {pattern: "scents" | "rainbow" | "white" | "off"}`
 - **Firmware** (PlatformIO, Arduino framework, `board = esp32dev`):
-  - ESPAsyncWebServer + AsyncTCP (maintained mathieucarbou forks), DNSServer, ArduinoJson, LittleFS, Preferences (NVS) for calibration, Adafruit NeoPixel (or FastLED), TFT_eSPI or Adafruit_ILI9341.
+  - ESPAsyncWebServer + AsyncTCP (the maintained mathieucarbou forks, now published as `esp32async/*`), DNSServer, ArduinoJson 7, LittleFS, Preferences (NVS) for calibration, Adafruit NeoPixel (or FastLED), TFT_eSPI or Adafruit_ILI9341.
+  - Partition table `huge_app.csv` (3 MB app, 896 KB LittleFS, no OTA): the default layout left the firmware at 93% of its slot.
+  - Code layout: `src/config.h` (all pins/limits), `pumps.cpp` (state machine), `calibration.cpp` (NVS), `web.cpp` (AP, captive portal, API). Bench test kept as env `bench` (`firmware/bench/`). Host-side tests for the state machine: `firmware/test_host/run.sh`.
   - **Non-blocking pump state machine** (millis-based; no `delay()` in the dispense path) so the web server stays responsive.
   - Dispense time per pump = `mL / calibrated_mL_per_s`. Run pumps **one at a time**.
   - Safety: all pump pins driven LOW at boot; max-runtime watchdog per pump; cancel always works.
+    - One function (`setPump`) writes pump pins and always turns the others off, so two pumps can never run together.
+    - A blend is rejected (400) if any volume is outside 0–24 mL, the total isn't 24 ± 0.2 mL, or any pump would run > 45 s.
+    - Watchdog: if a pin stays HIGH 2 s past its deadline, all pumps off → `error`.
+    - Manual runs capped at 60 s; hold-to-run stops ~0.4 s after the phone stops sending.
+    - Cancel writes all pins LOW immediately, before taking the state lock (web handlers run on a separate FreeRTOS task, so shared state is mutex-guarded).
+  - Default flow rate until calibrated: **1.17 mL/s** (pump spec sheet: 70 mL/min). Calibrated values stored in NVS, accepted range 0.05–10 mL/s.
+  - AP allows up to 10 phones at once (ESP32 maximum).
 
 ## 6. Hardware (as built)
 

@@ -3,7 +3,8 @@
 Read `SPEC.md` first. It is the decision log for this project: liquids, blend math, quiz design, architecture, pin map, chassis, timeline. Do not contradict it; if something needs to change, propose the change, and once approved update `SPEC.md` in the same commit.
 
 ## Repo layout
-- `firmware/` — PlatformIO project (ESP32, Arduino framework). `src/main.cpp` is currently the working Stage 1/2 pump bench test. `data/` will hold the web app (uploaded to LittleFS with "Upload Filesystem Image").
+- `firmware/` — PlatformIO project (ESP32, Arduino framework). `src/` is the real firmware (AP + captive portal + API + pump state machine); `bench/bench.cpp` is the pump bench test (env `bench`); `data/` is the web app (uploaded to LittleFS with "Upload Filesystem Image"); `test_host/` runs the pump state machine on a laptop.
+- `tools/simulate.js` — quiz simulation / threshold tuning (`node tools/simulate.js [--sweep]`).
 - `cad/scentty_chassis.fs` — Onshape FeatureScript for the chassis. `cad/tools/mirror.py` + `render.py` — CadQuery mirror for collision checks and preview renders (needs `pip install cadquery trimesh`).
 - `docs/` — renders and reference images.
 
@@ -14,7 +15,10 @@ Read `SPEC.md` first. It is the decision log for this project: liquids, blend ma
 - Verify before saying something works: build the firmware, open the web app (mock mode), run the simulation/tests.
 
 ## Commands
+- `pio` isn't on PATH on Kasra's Mac (installed by the VS Code extension): use `~/.platformio/penv/bin/pio`.
 - Build firmware: `pio run -d firmware`
+- Bench test: `pio run -d firmware -e bench -t upload`
+- Pump state machine tests (laptop, no ESP32): `firmware/test_host/run.sh`
 - Upload firmware: `pio run -d firmware -t upload`
 - Upload web app to the ESP32 flash: `pio run -d firmware -t uploadfs`
 - Serial monitor: `pio device monitor -d firmware`
