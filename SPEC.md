@@ -51,7 +51,8 @@ Perfume structure (used in quiz copy): orange = **top note** (smelled first, fad
   - single dominant: **The Sunchaser** (orange), **The Dreamer** (lavender), **The Wanderer** (cedar)
   - pairs: **Golden Hour** (orange + cedar), **Garden Party** (orange + lavender), **Old Soul** (lavender + cedar)
   - balanced: **Harmony**
-  Thresholds are TBD: choose them with a simulation script (random answers → archetype distribution) so all 7 are reachable and none dominates.
+  **Thresholds (decided Nov 9, via `node tools/simulate.js --sweep`):** on the raw quiz proportions p = score_i / total: if max − min < **0.16** → Harmony; else if top ≥ **0.54** → single; else → pair of the top two. Tuned against a random crowd plus three "persona" crowds (hidden personality mix, varying consistency); all 7 profiles appear in every crowd and none exceeds ~25%. Values live in `firmware/data/quiz.js`.
+- **Content:** 9 personality questions (4 answers each, every answer worth 3 points, quiz balanced 36/36/36) + the strength question last. All copy lives in `firmware/data/quiz.js`; logic in `firmware/data/scoring.js` (shared by the app and the simulator).
 - **Result screen:** profile name + short description, a **ternary (triangle) chart** with a dot at the user's position, the three percentages, the strength, and the mL recipe.
 
 ## 4. Phone experience (screen flow)
