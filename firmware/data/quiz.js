@@ -242,8 +242,19 @@ var SCENTTY_QUIZ = {
     },
   ],
 
+  // Little lines shown above certain questions to keep people going.
+  // Key = question number (1 = first question).
+  checkpoints: {
+    1: "First things first",
+    7: "You're on a roll",
+    13: "Halfway. Your blend is taking shape.",
+    20: "Home stretch",
+    25: "Last personality question",
+  },
+
   // Asked last. `strength` must be whisper / signature / bold (amounts are in scoring.js).
   strengthQuestion: {
+    kicker: "One more thing: strength",
     q: "You walk into a room. How much should people notice your scent?",
     answers: [
       { text: "Only if they lean in", label: "Whisper", strength: "whisper" },

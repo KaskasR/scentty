@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fbf5ec">
+  <title>ScenTTy · operator</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* operator-only bits; shared tokens come from style.css */
+    .admin { display: flex; flex-direction: column; gap: var(--sp-4); padding-bottom: 120px; }
+    .admin h1 { font: var(--fw-black) var(--fs-xl) / 1 var(--font-display); letter-spacing: var(--tracking-tight); }
+    .admin h2 { font: var(--fw-black) var(--fs-lg) / 1.2 var(--font-display); }
+    .panel { padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); }
+    .panel p { font-size: var(--fs-sm); color: var(--c-ink-2); }
+    .statusbar { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
+    .statusbar .chip[data-state="dispensing"], .statusbar .chip[data-state="busy"] { background: var(--c-orange-soft); }
+    .statusbar .chip[data-state="error"] { background: #fde7e3; color: #7d2417; }
+    .grid4 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
+    .hold {
+      min-height: 84px; border: 0; border-radius: var(--r-lg);
+      background: var(--soft); color: var(--c-ink);
+      font: var(--fw-black) var(--fs-md) / 1.2 var(--font-display);
+      touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+      transition: transform var(--dur-fast) var(--ease-spring), box-shadow var(--dur-fast);
+      cursor: pointer;
+    }
+    .hold small { display: block; font: var(--fw-medium) var(--fs-xs) / 1.4 var(--font-body); color: var(--c-ink-2); }
+    .hold.is-running { transform: scale(0.96); box-shadow: inset 0 0 0 3px var(--col); }
+    .row { display: flex; gap: var(--sp-2); align-items: center; flex-wrap: wrap; }
+    .row > * { flex: 1; }
+    label.field { display: flex; flex-direction: column; gap: var(--sp-1); font: var(--fw-bold) var(--fs-xs) / 1.2 var(--font-body); color: var(--c-ink-2); }
+    select, input {
+      min-height: 44px; padding: 0 var(--sp-3);
+      border: 0; border-radius: var(--r-md);
+      background: var(--c-surface-2); color: var(--c-ink);
+      font: var(--fw-bold) var(--fs-md) / 1 var(--font-display);
+      -webkit-appearance: none; appearance: none;
+    }
+    .btn--sm { min-height: 44px; font-size: var(--fs-sm); padding: 0 var(--sp-4); }
+    .cal { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+    .cal td { padding: var(--sp-2) 0; border-top: 1px solid var(--c-line); }
+    .cal td:last-child { text-align: right; font: var(--fw-bold) var(--fs-sm) / 1 var(--font-display); font-variant-numeric: tabular-nums; }
+    .log { min-height: 1.4em; font-size: var(--fs-sm); color: var(--c-ink-2); }
+    .estop {
+      position: fixed; z-index: 5; left: var(--gutter); right: var(--gutter);
+      bottom: max(var(--sp-4), env(safe-area-inset-bottom));
+      max-width: calc(var(--max-w) - 2 * var(--gutter)); margin: 0 auto;
+      min-height: 64px; border: 0; border-radius: var(--r-pill);
+      background: var(--c-danger); color: #fff;
+      font: var(--fw-black) var(--fs-lg) / 1 var(--font-display); letter-spacing: 0.04em;
+      box-shadow: var(--shadow-lift);
+      cursor: pointer;
+    }
+    .estop:active { transform: scale(0.97); }
+  </style>
+</head>
+<body>
+  <p class="mode-tag" id="mode-tag" hidden>Mock machine</p>
+  <main class="app admin">
+    <header>
+      <p class="kicker">ScenTTy</p>
+      <h1>Operator</h1>
+    </header>
+
+    <div class="statusbar" aria-live="polite">
+      <span class="chip" id="s-state">connecting…</span>
+      <span class="chip" id="s-detail"></span>
+    </div>
+
+    <section class="card panel">
+      <h2>Prime</h2>
+      <p>Hold to run. The pump stops as soon as you let go (or if this phone drops off the WiFi).</p>
+      <div class="grid4" id="prime"></div>
+    </section>
+
+    <section class="card panel">
+      <h2>Flush</h2>
+      <p>Put perfumer's alcohol in every reservoir and a cup under the nozzle, then run each pump in turn.</p>
+      <div class="row">
+        <label class="field">Seconds per pump <input id="flush-s" type="number" inputmode="decimal" min="1" max="60" value="8"></label>
+        <button class="btn btn--primary btn--sm" id="flush-go">Flush all</button>
+      </div>
+      <p class="log" id="flush-log"></p>
+    </section>
+
+    <section class="card panel">
+      <h2>Calibrate</h2>
+      <p>Prime first. Run into a measuring cylinder (or weigh it: 1 g ≈ 1.27 mL of alcohol), type what came out, save.</p>
+      <div class="row">
+        <label class="field">Pump <select id="cal-pump"></select></label>
+        <label class="field">Seconds <input id="cal-s" type="number" inputmode="decimal" min="1" max="60" value="10"></label>
+      </div>
+      <button class="btn btn--ghost btn--sm" id="cal-run">Run</button>
+      <div class="row">
+        <label class="field">Measured mL <input id="cal-ml" type="number" inputmode="decimal" min="0" step="0.1" placeholder="e.g. 9.4"></label>
+        <button class="btn btn--primary btn--sm" id="cal-save">Save</button>
+      </div>
+      <p class="log" id="cal-log"></p>
+      <table class="cal"><tbody id="cal-table"></tbody></table>
+    </section>
+
+    <section class="card panel">
+      <h2>Test blend</h2>
+      <p>Runs the real dispense sequence. Bottle and funnel on the pad first.</p>
+      <div class="row">
+        <label class="field">Profile mix
+          <select id="tb-mix">
+            <option value="1,1,1">Even (Harmony)</option>
+            <option value="1,0,0">All orange</option>
+            <option value="0,1,0">All lavender</option>
+            <option value="0,0,1">All cedar</option>
+          </select>
+        </label>
+        <label class="field">Strength
+          <select id="tb-strength">
+            <option value="whisper">Whisper</option>
+            <option value="signature" selected>Signature</option>
+            <option value="bold">Bold</option>
+          </select>
+        </label>
+      </div>
+      <button class="btn btn--primary btn--sm" id="tb-go">Run test blend</button>
+      <p class="log" id="tb-log"></p>
+    </section>
+
+    <section class="card panel">
+      <h2>LEDs</h2>
+      <div class="grid4">
+        <button class="btn btn--ghost btn--sm" data-led="scents">Scent colors</button>
+        <button class="btn btn--ghost btn--sm" data-led="rainbow">Rainbow</button>
+        <button class="btn btn--ghost btn--sm" data-led="white">All white</button>
+        <button class="btn btn--ghost btn--sm" data-led="off">Off</button>
+      </div>
+    </section>
+  </main>
+
+  <button class="estop" id="estop">STOP EVERYTHING</button>
+
+  <script src="quiz.js"></script>
+  <script src="scoring.js"></script>
+  <script src="api.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

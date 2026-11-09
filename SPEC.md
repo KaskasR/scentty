@@ -77,11 +77,21 @@ Busy handling: one blend at a time. If the machine is busy, the phone shows "you
   - **Design tokens as CSS variables** (colors, radii, spacing, type scale, motion) so visual polish can be layered on later without restructuring.
   - **Laptop/mock mode:** when the API isn't reachable (or `?mock=1`), the app fakes the machine (fake status/progress) so the team can test the full flow in any browser.
   - Must work inside iOS's captive-portal mini-browser: single page, no reliance on localStorage, no downloads/new tabs.
-- **API** (JSON):
-  - `GET /api/status` → `{state: idle|dispensing|done|error|busy, step, progress per pump, queue info}`
-  - `POST /api/blend` → `{orange_ml, lavender_ml, cedar_ml, alcohol_ml, profile, name?}` → accepted or busy
-  - `POST /api/cancel`
-  - admin: run pump N for ms, prime/flush, set calibration, LED test
+- **API** (JSON). Contract decided Nov 9; the web app (`firmware/data/api.js`) is written against exactly this, and its mock implements the same shapes.
+  - `GET /api/status` → `{state, job, step, pumps, error}`
+    - `state`: `idle` | `dispensing` | `done` | `error` | `busy` (`busy` = operator is running pumps by hand)
+    - `job`: id of the current/last blend (increments per accepted blend)
+    - `step`: index of the pump running now (0 orange, 1 lavender, 2 cedar, 3 alcohol), `-1` if none
+    - `pumps`: `[{id: "orange", target_ml, done_ml}, …lavender, cedar, alcohol]`, always 4 in pump order
+    - `error`: message or `null`
+  - `POST /api/blend` `{orange_ml, lavender_ml, cedar_ml, alcohol_ml, profile, strength}` → `200 {accepted: true, job}`, or `409 {accepted: false, busy: true, status: <same as /api/status>}` when not free. "Free" = `idle`, `done` or `error`. Pumps with 0 mL are skipped. `done` stays until the next blend.
+  - `POST /api/cancel` → all pumps off, `state: idle`. Always works (also the operator E-stop).
+  - Busy handling is **retry**, not a queue: a phone that gets 409 shows "you're next" (with the current blend's progress) and retries every 2 s.
+  - Admin (operator page `admin.html`; firmware should also serve it at `/admin`):
+    - `POST /api/admin/run {pump: 0-3, ms}` → run one pump for `ms` (cap 60000), then stop by itself. Rejected (409) while dispensing. Hold-to-run sends `ms: 400` every 250 ms, so a dropped phone stops the pump within 0.4 s.
+    - `POST /api/admin/stop` → stop a manual run
+    - `GET /api/admin/calibration` → `{ml_per_s: [o, l, c, a]}`; `POST /api/admin/calibration {pump, ml_per_s}` → saved to NVS
+    - `POST /api/admin/led {pattern: "scents" | "rainbow" | "white" | "off"}`
 - **Firmware** (PlatformIO, Arduino framework, `board = esp32dev`):
   - ESPAsyncWebServer + AsyncTCP (maintained mathieucarbou forks), DNSServer, ArduinoJson, LittleFS, Preferences (NVS) for calibration, Adafruit NeoPixel (or FastLED), TFT_eSPI or Adafruit_ILI9341.
   - **Non-blocking pump state machine** (millis-based; no `delay()` in the dispense path) so the web server stays responsive.

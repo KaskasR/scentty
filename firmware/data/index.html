@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fbf5ec">
+  <title>ScenTTy · find your scent</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="ambient" aria-hidden="true">
+    <span class="ambient__blob ambient__blob--orange"></span>
+    <span class="ambient__blob ambient__blob--lavender"></span>
+    <span class="ambient__blob ambient__blob--cedar"></span>
+  </div>
+  <p class="mode-tag" id="mode-tag" hidden>Mock machine</p>
+
+  <main class="app">
+
+    <!-- 1. Welcome -->
+    <section class="screen screen--welcome is-active" data-screen="welcome">
+      <div class="trio" aria-hidden="true">
+        <span class="trio__blob trio__blob--orange"></span>
+        <span class="trio__blob trio__blob--lavender"></span>
+        <span class="trio__blob trio__blob--cedar"></span>
+      </div>
+      <h1 class="wordmark">Scen<span class="wordmark__tt">TT</span>y</h1>
+      <p class="lede">A perfume that's actually about you.</p>
+      <p class="muted"><span data-bind="question-count">25</span> quick questions. Then watch your bottle get blended right in front of you.</p>
+      <div class="actions">
+        <button class="btn btn--primary" data-action="start">Find your scent</button>
+      </div>
+      <p class="fineprint">Theta Tau · Fall '26 build project</p>
+    </section>
+
+    <!-- 2. Questions (one template, re-rendered per question) -->
+    <section class="screen screen--question" data-screen="question">
+      <header class="qbar">
+        <button class="icon-btn" data-action="back" aria-label="Back">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+        </button>
+        <div class="progress" role="progressbar" aria-label="Quiz progress" aria-valuemin="0" aria-valuemax="100">
+          <span class="progress__fill" id="q-progress"></span>
+        </div>
+        <span class="qbar__count"><b id="q-num">1</b><span class="qbar__of">/</span><span id="q-total">26</span></span>
+      </header>
+      <div class="question" id="question">
+        <p class="kicker" id="q-kicker"></p>
+        <h2 class="question__text" id="q-text"></h2>
+        <ol class="answers" id="q-answers"></ol>
+      </div>
+    </section>
+
+    <!-- 3. Reveal -->
+    <section class="screen screen--reveal" data-screen="reveal">
+      <div class="buildup" id="buildup">
+        <div class="buildup__orbs" aria-hidden="true">
+          <span class="orb orb--orange"></span>
+          <span class="orb orb--lavender"></span>
+          <span class="orb orb--cedar"></span>
+        </div>
+        <p class="buildup__line" id="buildup-line" aria-live="polite">Reading your answers…</p>
+      </div>
+
+      <article class="result" id="result" hidden>
+        <p class="kicker">Your scent profile</p>
+        <h2 class="result__name" id="r-name"></h2>
+        <p class="result__tagline" id="r-tagline"></p>
+
+        <figure class="card tri-card">
+          <svg class="tri" id="tri" viewBox="0 0 320 312" role="img" aria-label="Your position on the scent triangle"></svg>
+        </figure>
+
+        <ul class="shares" id="r-shares"></ul>
+
+        <p class="result__desc" id="r-desc"></p>
+        <p class="result__why" id="r-why"></p>
+
+        <section class="card recipe">
+          <header class="recipe__head">
+            <h3 class="recipe__title">Your recipe</h3>
+            <span class="chip" id="r-strength"></span>
+          </header>
+          <ul class="recipe__list" id="r-recipe"></ul>
+          <p class="fineprint">24 mL total, measured to 0.1 mL</p>
+        </section>
+
+        <div class="actions actions--sticky">
+          <button class="btn btn--primary" data-action="to-ready">Make my bottle</button>
+          <button class="btn btn--ghost" data-action="retake">Retake the quiz</button>
+        </div>
+      </article>
+    </section>
+
+    <!-- 4. Get ready -->
+    <section class="screen screen--ready" data-screen="ready">
+      <p class="kicker">Before we pour</p>
+      <h2 class="title">Set up your bottle</h2>
+      <ol class="steps">
+        <li class="step">
+          <svg class="step__icon" viewBox="0 0 48 48" aria-hidden="true">
+            <rect x="19" y="5" width="10" height="7" rx="2"/><path d="M17 12h14v5l5 6v17a3 3 0 0 1-3 3H15a3 3 0 0 1-3-3V23l5-6z"/>
+          </svg>
+          <div><b>Grab a bottle</b><span>from the rack on the side of the machine.</span></div>
+        </li>
+        <li class="step">
+          <svg class="step__icon" viewBox="0 0 48 48" aria-hidden="true">
+            <path d="M18 14h12v4l3 4v12H15V22l3-4z"/><ellipse cx="24" cy="39" rx="16" ry="4"/><path d="M8 30l-3-2M40 30l3-2M24 6v3"/>
+          </svg>
+          <div><b>Set it on the lit pad</b><span>right under the nozzle.</span></div>
+        </li>
+        <li class="step">
+          <svg class="step__icon" viewBox="0 0 48 48" aria-hidden="true">
+            <path d="M8 8h32L27 26v14h-6V26z"/>
+          </svg>
+          <div><b>Put the funnel in</b><span>so every drop lands in the bottle.</span></div>
+        </li>
+      </ol>
+      <p class="notice" id="ready-notice" hidden></p>
+      <div class="actions">
+        <button class="btn btn--primary" data-action="start-blend">Bottle's ready. Start!</button>
+        <button class="btn btn--ghost" data-action="to-result">Back to my result</button>
+      </div>
+    </section>
+
+    <!-- Busy: someone else is mid-blend -->
+    <section class="screen screen--waiting" data-screen="waiting">
+      <div class="ring" id="wait-ring" aria-hidden="true"><span class="ring__dot"></span></div>
+      <p class="kicker">Machine's busy</p>
+      <h2 class="title">You're next.</h2>
+      <p class="muted">Someone else's bottle is being blended right now. Yours starts by itself as soon as it's done. Keep this page open.</p>
+      <div class="actions">
+        <button class="btn btn--ghost" data-action="leave-queue">Never mind</button>
+      </div>
+    </section>
+
+    <!-- 5. Making it -->
+    <section class="screen screen--making" data-screen="making">
+      <p class="kicker" id="m-kicker">Now blending</p>
+      <h2 class="title" id="m-title">Your bottle</h2>
+      <div class="making">
+        <div class="bottle" aria-hidden="true">
+          <span class="bottle__cap"></span>
+          <span class="bottle__neck"></span>
+          <span class="bottle__body"><span class="bottle__fill" id="m-fill"></span></span>
+        </div>
+        <p class="making__pct" aria-live="polite"><span id="m-pct">0</span><small>%</small></p>
+      </div>
+      <p class="making__step" id="m-step">Warming up…</p>
+      <ul class="pumps" id="m-pumps"></ul>
+      <div class="actions">
+        <button class="btn btn--ghost btn--danger" data-action="cancel" id="m-cancel">Stop</button>
+      </div>
+    </section>
+
+    <!-- 6. Done -->
+    <section class="screen screen--done" data-screen="done">
+      <div class="bottle bottle--full" aria-hidden="true">
+        <span class="bottle__cap"></span>
+        <span class="bottle__neck"></span>
+        <span class="bottle__body"><span class="bottle__fill" id="d-fill"></span></span>
+        <span class="spark spark--1"></span><span class="spark spark--2"></span><span class="spark spark--3"></span>
+      </div>
+      <p class="kicker">All done</p>
+      <h2 class="title">It's yours.</h2>
+      <ol class="checklist">
+        <li>Lift off the funnel.</li>
+        <li>Cap it tight and shake gently.</li>
+        <li>Give it a few minutes. It only gets better.</li>
+      </ol>
+      <p class="muted">Profile: <b id="d-name"></b></p>
+      <div class="actions">
+        <button class="btn btn--primary" data-action="restart">Start over</button>
+      </div>
+    </section>
+
+    <!-- Error -->
+    <section class="screen screen--error" data-screen="error">
+      <p class="kicker">Hold on</p>
+      <h2 class="title">The machine needs a hand.</h2>
+      <p class="notice notice--error" id="e-msg"></p>
+      <p class="muted">Grab someone from the ScenTTy team, then try again.</p>
+      <div class="actions">
+        <button class="btn btn--primary" data-action="to-ready">Try again</button>
+        <button class="btn btn--ghost" data-action="to-result">Back to my result</button>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="quiz.js"></script>
+  <script src="scoring.js"></script>
+  <script src="api.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
