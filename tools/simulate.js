@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// ScenTTy quiz simulation. Run: node tools/simulate.js [--sweep]
+// ScenTTy quiz simulation. Run: node tools/simulate.js [--sweep] [--th=harmonySpread,singleShare]
 //
 // Uses the real quiz content and scoring code from firmware/data/, so whatever
 // it prints is exactly what the phone app will do.
@@ -7,8 +7,9 @@
 // Two simulated crowds:
 //   random   — every answer picked uniformly at random (worst case: noisy people)
 //   persona  — each person has a hidden "true" mix of spark/calm/anchor (uniform
-//              over the triangle) and leans toward answers that match it. Closer
-//              to real quiz-takers, so thresholds are tuned mainly on this.
+//              over the triangle) and leans toward answers that match it, at three
+//              consistency levels (beta). Closer to real quiz-takers, so the
+//              threshold sweep is tuned on these.
 
 const path = require("path");
 const QUIZ = require(path.join(__dirname, "../firmware/data/quiz.js"));
@@ -98,9 +99,11 @@ for (const s of Object.values(crowds).flat()) {
 
 // ---- optional threshold sweep -----------------------------------------
 function score(th) {
-  // Average, over all crowds, of the worst profile's distance from an even 1/7.
-  // Robust to how consistent real people turn out to be.
-  const lists = Object.values(crowds);
+  // Average, over the persona crowds, of the worst profile's distance from an
+  // even 1/7. Robust to how consistent real people turn out to be. The random
+  // crowd is left out: over 25 questions random answers average out to the
+  // center (→ mostly Harmony), which is fine for someone tapping blindly.
+  const lists = Object.entries(crowds).filter(([n]) => n !== "random").map(([, l]) => l);
   return lists.reduce((sum, list) => {
     const d = distribution(list, th);
     return sum + Math.max(...PROFILE_IDS.map((id) => Math.abs(d[id] - 1 / 7)));
@@ -114,14 +117,20 @@ if (process.argv.includes("--sweep")) {
       rows.push({ th, err: score(th) });
     }
   rows.sort((a, b) => a.err - b.err);
-  console.log("\nTHRESHOLD SWEEP: best 10 (avg over crowds of worst-profile error vs an even 14.3%)");
+  console.log("\nTHRESHOLD SWEEP: best 10 (avg over persona crowds of worst-profile error vs an even 14.3%)");
   for (const { th, err } of rows.slice(0, 10))
     console.log(`  harmonySpread ${th.harmonySpread.toFixed(2)}  singleShare ${th.singleShare.toFixed(2)}  → max error ${pct(err)}`);
 }
 
 // ---- report ----------------------------------------------------------------
+// --th=0.16,0.54 tries thresholds without editing quiz.js
+const thArg = process.argv.find((a) => a.startsWith("--th="));
+if (thArg) {
+  const [h, sg] = thArg.slice(5).split(",").map(Number);
+  QUIZ.thresholds = { harmonySpread: h, singleShare: sg };
+}
 const th = QUIZ.thresholds;
-console.log(`\nTHRESHOLDS in quiz.js: harmonySpread ${th.harmonySpread}, singleShare ${th.singleShare}`);
+console.log(`\nTHRESHOLDS ${thArg ? "(from --th)" : "in quiz.js"}: harmonySpread ${th.harmonySpread}, singleShare ${th.singleShare}`);
 for (const [name, list] of Object.entries(crowds)) {
   const d = distribution(list, th);
   console.log(`\nDISTRIBUTION: ${name} crowd (${N} people)`);

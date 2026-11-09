@@ -96,6 +96,150 @@ var SCENTTY_QUIZ = {
         { text: "Whatever the barista recommends", points: { orange: 2, lavender: 1 } },
       ],
     },
+    {
+      q: "Pick a superpower.",
+      answers: [
+        { text: "Teleport anywhere, right now", points: { orange: 3 } },
+        { text: "Hear what people really mean", points: { lavender: 3 } },
+        { text: "Never get tired", points: { cedar: 3 } },
+        { text: "Pause time", points: { lavender: 2, cedar: 1 } },
+      ],
+    },
+    {
+      q: "At a party, you're…",
+      answers: [
+        { text: "in the middle of the dance floor", points: { orange: 3 } },
+        { text: "on the balcony, deep in one conversation", points: { lavender: 3 } },
+        { text: "running the grill", points: { cedar: 3 } },
+        { text: "introducing people who should know each other", points: { orange: 2, lavender: 1 } },
+      ],
+    },
+    {
+      q: "Phone's at 3%. You…",
+      answers: [
+        { text: "keep going. It'll be fine.", points: { orange: 3 } },
+        { text: "honestly feel a little relieved", points: { lavender: 3 } },
+        { text: "already packed a power bank", points: { cedar: 3 } },
+        { text: "borrow a charger and make a friend", points: { orange: 2, lavender: 1 } },
+      ],
+    },
+    {
+      q: "Pick a sky.",
+      answers: [
+        { text: "Clear blue, high noon", points: { orange: 3 } },
+        { text: "Lilac, right after sunset", points: { lavender: 3 } },
+        { text: "A storm rolling in over the hills", points: { cedar: 3 } },
+        { text: "Stars, miles from any city", points: { lavender: 1, cedar: 2 } },
+      ],
+    },
+    {
+      q: "No budget, one week. Where to?",
+      answers: [
+        { text: "A city you've never seen, no itinerary", points: { orange: 3 } },
+        { text: "A quiet seaside town with a good bookshop", points: { lavender: 3 } },
+        { text: "Backcountry. No signal.", points: { cedar: 3 } },
+        { text: "A road trip with your best friends", points: { orange: 2, cedar: 1 } },
+      ],
+    },
+    {
+      q: "Your texting style?",
+      answers: [
+        { text: "Five messages in a row", points: { orange: 3 } },
+        { text: "Long, thoughtful paragraphs", points: { lavender: 3 } },
+        { text: "\"k.\"", points: { cedar: 3 } },
+        { text: "Voice memos", points: { orange: 2, lavender: 1 } },
+      ],
+    },
+    {
+      q: "How do you pack for a trip?",
+      answers: [
+        { text: "Night before. Wing it.", points: { orange: 3 } },
+        { text: "Outfits planned around the vibe", points: { lavender: 3 } },
+        { text: "A checklist. Possibly laminated.", points: { cedar: 3 } },
+        { text: "Carry-on only, always", points: { orange: 1, cedar: 2 } },
+      ],
+    },
+    {
+      q: "Pick a pet.",
+      answers: [
+        { text: "A golden retriever who loves everyone", points: { orange: 3 } },
+        { text: "A cat that chose you", points: { lavender: 3 } },
+        { text: "A trail dog that never leaves your side", points: { cedar: 3 } },
+        { text: "A very old, very wise tortoise", points: { lavender: 1, cedar: 2 } },
+      ],
+    },
+    {
+      q: "Something goes wrong on a trip. You…",
+      answers: [
+        { text: "turn it into the best story of the trip", points: { orange: 3 } },
+        { text: "check that everyone's okay first", points: { lavender: 3 } },
+        { text: "are already fixing it", points: { cedar: 3 } },
+        { text: "laugh, then make a backup plan", points: { orange: 1, cedar: 2 } },
+      ],
+    },
+    {
+      q: "Pick a season.",
+      answers: [
+        { text: "Summer", points: { orange: 3 } },
+        { text: "Spring", points: { lavender: 3 } },
+        { text: "Fall", points: { cedar: 3 } },
+        { text: "Winter, and staying in", points: { lavender: 2, cedar: 1 } },
+      ],
+    },
+    {
+      q: "Weekend breakfast?",
+      answers: [
+        { text: "Brunch with a big group", points: { orange: 3 } },
+        { text: "A pastry and tea by the window", points: { lavender: 3 } },
+        { text: "Eggs and coffee before sunrise", points: { cedar: 3 } },
+        { text: "Pancakes for everyone, you're cooking", points: { orange: 1, lavender: 1, cedar: 1 } },
+      ],
+    },
+    {
+      q: "Your room, right now?",
+      answers: [
+        { text: "Clothes on every surface, souvenirs everywhere", points: { orange: 3 } },
+        { text: "Plants, candles, art on the walls", points: { lavender: 3 } },
+        { text: "Clean. Everything has a place.", points: { cedar: 3 } },
+        { text: "Organized chaos. You know where everything is.", points: { orange: 1, lavender: 1, cedar: 1 } },
+      ],
+    },
+    {
+      q: "Rainy day. You…",
+      answers: [
+        { text: "get everyone over for a movie marathon", points: { orange: 3 } },
+        { text: "window seat, book, rain sounds", points: { lavender: 3 } },
+        { text: "finally fix that thing that's been broken for weeks", points: { cedar: 3 } },
+        { text: "bake something and share it", points: { orange: 1, lavender: 2 } },
+      ],
+    },
+    {
+      q: "Movie night pick?",
+      answers: [
+        { text: "A loud comedy with the whole crew", points: { orange: 3 } },
+        { text: "Something animated that makes you cry", points: { lavender: 3 } },
+        { text: "A documentary about climbing something huge", points: { cedar: 3 } },
+        { text: "A classic you've seen ten times", points: { lavender: 1, cedar: 2 } },
+      ],
+    },
+    {
+      q: "You'd rather be known for…",
+      answers: [
+        { text: "making every room more fun", points: { orange: 3 } },
+        { text: "being kind when nobody's watching", points: { lavender: 3 } },
+        { text: "always keeping your word", points: { cedar: 3 } },
+        { text: "making things people love", points: { orange: 1, lavender: 2 } },
+      ],
+    },
+    {
+      q: "The perfect Friday night ends…",
+      answers: [
+        { text: "at a diner at 2 a.m. with new friends", points: { orange: 3 } },
+        { text: "early, in a good book", points: { lavender: 3 } },
+        { text: "around a campfire", points: { cedar: 3 } },
+        { text: "on a rooftop, watching the city lights", points: { orange: 2, cedar: 1 } },
+      ],
+    },
   ],
 
   // Asked last. `strength` must be whisper / signature / bold (amounts are in scoring.js).
@@ -113,7 +257,7 @@ var SCENTTY_QUIZ = {
   //   max − min < harmonySpread        → Harmony
   //   else top share ≥ singleShare     → the single profile
   //   else                             → the pair profile for the top two
-  thresholds: { harmonySpread: 0.16, singleShare: 0.54 },
+  thresholds: { harmonySpread: 0.2, singleShare: 0.56 },
 
   // The 7 result profiles. `why` is one line on why the blend fits.
   profiles: {

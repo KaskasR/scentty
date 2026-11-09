@@ -40,7 +40,7 @@ Perfume structure (used in quiz copy): orange = **top note** (smelled first, fad
 ## 3. Quiz design (to be drafted in full — see §9 Phase 1)
 
 - **Tone:** very playful, genuinely well-designed, **not tacky**. No random emojis. Personality comes from writing, motion, color, and custom illustration/CSS.
-- **Length:** 8–10 questions, ~2 minutes. One question per screen, progress indicator.
+- **Length:** 25 questions + strength, everyone answers all of them (~5 min). Changed Nov 9 from 8–10 at Kasra's call: more questions = more accurate placement. One question per screen, progress indicator.
 - **Scoring:** each answer adds points to `orange`, `lavender`, and/or `cedar` (may split points). One separate question sets **strength** (Whisper / Signature / Bold), e.g. "When you walk into a room, how much do you want people to notice your scent?"
 - **Scent personalities:**
   - Orange — *the spark*: outgoing, spontaneous, optimistic, social, loves new things.
@@ -51,8 +51,8 @@ Perfume structure (used in quiz copy): orange = **top note** (smelled first, fad
   - single dominant: **The Sunchaser** (orange), **The Dreamer** (lavender), **The Wanderer** (cedar)
   - pairs: **Golden Hour** (orange + cedar), **Garden Party** (orange + lavender), **Old Soul** (lavender + cedar)
   - balanced: **Harmony**
-  **Thresholds (decided Nov 9, via `node tools/simulate.js --sweep`):** on the raw quiz proportions p = score_i / total: if max − min < **0.16** → Harmony; else if top ≥ **0.54** → single; else → pair of the top two. Tuned against a random crowd plus three "persona" crowds (hidden personality mix, varying consistency); all 7 profiles appear in every crowd and none exceeds ~25%. Values live in `firmware/data/quiz.js`.
-- **Content:** 9 personality questions (4 answers each, every answer worth 3 points, quiz balanced 36/36/36) + the strength question last. All copy lives in `firmware/data/quiz.js`; logic in `firmware/data/scoring.js` (shared by the app and the simulator).
+  **Thresholds (decided Nov 9, via `node tools/simulate.js --sweep`):** on the raw quiz proportions p = score_i / total: if max − min < **0.20** → Harmony; else if top ≥ **0.56** → single; else → pair of the top two. Tuned on three simulated "persona" crowds (hidden personality mix, varying answer consistency): for the loosest crowd all 7 land at 13.5–15%; for the most consistent, singles reach ~25% and Harmony drops to ~4.5%. Random answer-tappers average out to the center (~65% Harmony), which is intended. Values live in `firmware/data/quiz.js`.
+- **Content:** 25 personality questions (4 answers each, every answer worth 3 points, quiz balanced 100/100/100) + the strength question last. All copy lives in `firmware/data/quiz.js`; logic in `firmware/data/scoring.js` (shared by the app and the simulator).
 - **Result screen:** profile name + short description, a **ternary (triangle) chart** with a dot at the user's position, the three percentages, the strength, and the mL recipe.
 
 ## 4. Phone experience (screen flow)
