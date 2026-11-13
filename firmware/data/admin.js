@@ -143,12 +143,19 @@
     var r = S.recipe({ orange: mix[0], lavender: mix[1], cedar: mix[2] }, $("tb-strength").value);
     machine.blend({
       orange_ml: r.orange_ml, lavender_ml: r.lavender_ml, cedar_ml: r.cedar_ml, alcohol_ml: r.alcohol_ml,
-      profile: "test", strength: r.strength,
+      profile: "test", profile_name: "Test blend", strength: r.strength,
     }).then(function (res) {
       log("tb-log", res.accepted
         ? "Started job " + res.job + ": " + [r.orange_ml, r.lavender_ml, r.cedar_ml, r.alcohol_ml].map(function (v) { return v.toFixed(1); }).join(" / ") + " mL"
         : "Machine is busy.");
     }, function (e) { log("tb-log", "Failed: " + e.message); });
+  });
+
+  // ---- screen demo ----------------------------------------------------------------------------------
+  $("screen-demo").addEventListener("click", function () {
+    machine.admin.screenDemo().then(function () {
+      log("screen-log", "Playing on the machine's screen (about 40 s). A real blend interrupts it.");
+    }, function (e) { log("screen-log", "Failed: " + e.message); });
   });
 
   // ---- LEDs ---------------------------------------------------------------------------------

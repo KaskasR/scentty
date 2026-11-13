@@ -27,3 +27,15 @@ constexpr uint32_t GAP_BETWEEN_PUMPS_MS = 300;  // let drips settle between pump
 
 // ---- WiFi / captive portal (SPEC §5) ------------------------------------------------
 constexpr const char *AP_SSID = "ScenTTy";       // open network
+
+// ---- screen (HARDWARE.md §5) ------------------------------------------------------------
+// 2.8" ILI9341 on hardware SPI (SCK 18, MOSI 23). Set SCREEN_ENABLED to false to run without it:
+// the screen code then never starts and nothing else changes.
+constexpr bool SCREEN_ENABLED = true;
+constexpr int TFT_CS = 5;
+constexpr int TFT_DC = 21;
+constexpr int TFT_RST = 4;
+constexpr uint32_t TFT_SPI_HZ = 40000000;        // drop to 27000000 if you see glitchy pixels
+constexpr uint32_t SCREEN_DONE_MS = 25000;       // "ready" screen, then back to idle
+constexpr uint32_t SCREEN_STOPPED_MS = 6000;
+constexpr uint32_t SCREEN_ERROR_MS = 20000;

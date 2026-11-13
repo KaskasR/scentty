@@ -3,3 +3,4 @@
 __pycache__/
 *.stl
 .DS_Store
+firmware/test_host/screen/out/

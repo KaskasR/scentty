@@ -70,6 +70,7 @@ var ScenttyMachine = (function () {
           return post("/api/admin/calibration", { pump: pump, ml_per_s: mlPerS }).then(expectOk);
         },
         led: function (pattern) { return post("/api/admin/led", { pattern: pattern }).then(expectOk); },
+        screenDemo: function () { return post("/api/admin/screen-demo").then(expectOk); },
       },
     };
   }
@@ -161,6 +162,7 @@ var ScenttyMachine = (function () {
           return later({ ok: true, ml_per_s: calibration.slice() });
         },
         led: function (pattern) { return later({ ok: true, pattern: pattern }); },
+        screenDemo: function () { return later({ ok: true }); },
       },
     };
   }

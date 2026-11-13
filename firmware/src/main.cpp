@@ -1,4 +1,4 @@
-// ScenTTy firmware: WiFi + captive portal + web app + pump control.
+// ScenTTy firmware: WiFi + captive portal + web app + pump control + screen.
 // See SPEC.md. The pump bench test lives in firmware/bench/ (env "bench").
 //
 // Serial monitor (115200) shows every state change, e.g.
@@ -10,6 +10,7 @@
 #include "calibration.h"
 #include "pumps.h"
 #include "web.h"
+#include "display.h"
 
 Calibration calibration;
 Dispenser dispenser(calibration);
@@ -23,6 +24,7 @@ void setup() {
 
   calibration.begin();
   webBegin(dispenser, calibration);
+  displayBegin(dispenser, calibration);  // the screen runs on its own task (core 0)
   Serial.println("Ready. Join the ScenTTy WiFi.");
 }
 

@@ -8,6 +8,7 @@
 //     a login network and pops up its mini-browser showing the quiz.
 
 #include "web.h"
+#include "display.h"
 #include <WiFi.h>
 #include <DNSServer.h>
 #include <LittleFS.h>
@@ -93,6 +94,7 @@ static void setupApi() {
     switch (pumps->startBlend(ml, job, why)) {
       case StartResult::Accepted: {
         Serial.printf("[blend] profile: %s, strength: %s\n", json["profile"] | "?", json["strength"] | "?");
+        displayNoteBlend(job, json["profile_name"] | "", json["strength"] | "");
         JsonDocument doc;
         doc["accepted"] = true;
         doc["job"] = job;
@@ -152,6 +154,12 @@ static void setupApi() {
       return sendError(req, 400, "need pump 0-3 and ml_per_s between " + String(MIN_ML_PER_S, 2) + " and " +
                                      String(MAX_ML_PER_S, 1));
     }
+    sendOk(req);
+  });
+
+  // Plays every screen state once without pumping (for rehearsing / filming).
+  server.on("/api/admin/screen-demo", HTTP_POST, [](AsyncWebServerRequest *req) {
+    displayStartDemo();
     sendOk(req);
   });
 

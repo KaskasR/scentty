@@ -84,7 +84,7 @@ Busy handling: one blend at a time. If the machine is busy, the phone shows "you
     - `step`: index of the pump running now (0 orange, 1 lavender, 2 cedar, 3 alcohol), `-1` if none
     - `pumps`: `[{id: "orange", target_ml, done_ml}, …lavender, cedar, alcohol]`, always 4 in pump order
     - `error`: message or `null`
-  - `POST /api/blend` `{orange_ml, lavender_ml, cedar_ml, alcohol_ml, profile, strength}` → `200 {accepted: true, job}`, or `409 {accepted: false, busy: true, status: <same as /api/status>}` when not free. "Free" = `idle`, `done` or `error`. Pumps with 0 mL are skipped. `done` stays until the next blend.
+  - `POST /api/blend` `{orange_ml, lavender_ml, cedar_ml, alcohol_ml, profile, profile_name, strength}` (`profile_name` is the display name, e.g. "Golden Hour", shown on the machine's screen; optional) → `200 {accepted: true, job}`, or `409 {accepted: false, busy: true, status: <same as /api/status>}` when not free. "Free" = `idle`, `done` or `error`. Pumps with 0 mL are skipped. `done` stays until the next blend.
   - `POST /api/cancel` → all pumps off, `state: idle`. Always works (also the operator E-stop).
   - Busy handling is **retry**, not a queue: a phone that gets 409 shows "you're next" (with the current blend's progress) and retries every 2 s.
   - Admin (operator page `admin.html`; firmware should also serve it at `/admin`):
@@ -92,10 +92,12 @@ Busy handling: one blend at a time. If the machine is busy, the phone shows "you
     - `POST /api/admin/stop` → stop a manual run
     - `GET /api/admin/calibration` → `{ml_per_s: [o, l, c, a]}`; `POST /api/admin/calibration {pump, ml_per_s}` → saved to NVS
     - `POST /api/admin/led {pattern: "scents" | "rainbow" | "white" | "off"}`
+    - `POST /api/admin/screen-demo` → plays every screen state once on the TFT without pumping (rehearsal/filming); a real blend interrupts it
 - **Firmware** (PlatformIO, Arduino framework, `board = esp32dev`):
   - ESPAsyncWebServer + AsyncTCP (the maintained mathieucarbou forks, now published as `esp32async/*`), DNSServer, ArduinoJson 7, LittleFS, Preferences (NVS) for calibration, Adafruit NeoPixel, Adafruit_ILI9341 + Adafruit GFX (both verified on this hardware, see `HARDWARE.md`).
   - Partition table `huge_app.csv` (3 MB app, 896 KB LittleFS, no OTA): the default layout left the firmware at 93% of its slot.
-  - Code layout: `src/config.h` (all pins/limits), `pumps.cpp` (state machine), `calibration.cpp` (NVS), `web.cpp` (AP, captive portal, API). Bench test kept as env `bench` (`firmware/bench/`). Host-side tests for the state machine: `firmware/test_host/run.sh`.
+  - Code layout: `src/config.h` (all pins/limits), `pumps.cpp` (state machine), `calibration.cpp` (NVS), `web.cpp` (AP, captive portal, API), `display.cpp` (TFT screen). Bench test kept as env `bench` (`firmware/bench/`). Host-side tests for the state machine: `firmware/test_host/run.sh`.
+  - **Screen (Phase 4):** mirrors the guest's journey in the web app's style (paper background, scent colors, drifting blobs). Scenes: idle (wordmark + a WiFi-join QR code `WIFI:T:nopass;S:ScenTTy;;` + "N people taking the quiz" from the AP's station count) → reveal (profile name + scent split, ~4 s) → pour (four reservoirs in machine order, live mL, tube + drops into the output bottle filling in layers, seconds left) → done (confetti, 25 s) → idle; cancel → "Blend stopped" (6 s); error → error screen (20 s). Runs as its own FreeRTOS task on core 0 and only reads the dispenser status, so it can't affect pump timing. Drawn in 320×48 strips (30 KB RAM, no PSRAM needed). `SCREEN_ENABLED` in `config.h` turns it off. Laptop preview of every scene: `firmware/test_host/screen/run.sh` → PNGs. LEDs not done yet.
   - **Non-blocking pump state machine** (millis-based; no `delay()` in the dispense path) so the web server stays responsive.
   - Dispense time per pump = `mL / calibrated_mL_per_s`. Run pumps **one at a time**.
   - Safety: all pump pins driven LOW at boot; max-runtime watchdog per pump; cancel always works.

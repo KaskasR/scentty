@@ -312,7 +312,7 @@
     var r = state.result.recipe;
     return {
       orange_ml: r.orange_ml, lavender_ml: r.lavender_ml, cedar_ml: r.cedar_ml, alcohol_ml: r.alcohol_ml,
-      profile: state.result.profileId, strength: r.strength,
+      profile: state.result.profileId, profile_name: state.result.profile.name, strength: r.strength,
     };
   }
 
