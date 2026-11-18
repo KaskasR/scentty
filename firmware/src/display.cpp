@@ -791,7 +791,7 @@ void displayBegin(Dispenser &pumps, Calibration &cal) {
 
   tft = new Adafruit_ILI9341(TFT_CS, TFT_DC, TFT_RST);
   tft->begin(TFT_SPI_HZ);
-  tft->setRotation(1);  // landscape, 320×240 (HARDWARE.md §5)
+  tft->setRotation(TFT_ROTATION);  // landscape, 320×240 (config.h)
   tft->fillScreen(c565(BG));
 
   strip = new GFXcanvas16(W, STRIP_H);

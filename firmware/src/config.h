@@ -36,6 +36,7 @@ constexpr int TFT_CS = 5;
 constexpr int TFT_DC = 21;
 constexpr int TFT_RST = 4;
 constexpr uint32_t TFT_SPI_HZ = 40000000;        // drop to 27000000 if you see glitchy pixels
+constexpr uint8_t TFT_ROTATION = 3;              // landscape; 3 = mounted upside down in the jig, 1 = right way up
 constexpr uint32_t SCREEN_DONE_MS = 25000;       // "ready" screen, then back to idle
 constexpr uint32_t SCREEN_STOPPED_MS = 6000;
 constexpr uint32_t SCREEN_ERROR_MS = 20000;
