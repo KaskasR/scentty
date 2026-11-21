@@ -180,6 +180,8 @@
     var p = res.profile, r = res.recipe, sh = r.shares;
     var ranked = S.SCENTS.slice().sort(function (a, b) { return sh[b] - sh[a]; });
 
+    $("r-kicker").textContent = res.presetId ? "Preset" : "Your scent profile";
+    $("r-retake").textContent = res.presetId || !state.answers.length ? "Take the quiz instead" : "Retake the quiz";
     $("r-name").textContent = p.name;
     $("r-name").style.setProperty("--name-a", color(ranked[0]));
     $("r-name").style.setProperty("--name-b", color(res.profileId === "harmony" ? ranked[2] : ranked[1]));
@@ -216,7 +218,13 @@
       list.appendChild(row);
     });
 
-    $("r-code").textContent = S.encodeCode(res);
+    var code = S.encodeCode(res);
+    $("r-code").hidden = !code;
+    $("r-code").textContent = code || "";
+    $("r-code-kicker").textContent = code ? "Your recipe code" : "Make it again";
+    $("r-code-note").innerHTML = code
+      ? "Screenshot this. Next time, tap <b>Already have a recipe code?</b> and get this exact bottle again, no quiz."
+      : "This one's always on the front page. Just tap <b>" + esc(res.profile.name) + "</b> there, no quiz.";
 
     // stagger the result blocks in
     Array.prototype.forEach.call($("result").children, function (c, n) { c.style.setProperty("--i", n); });
@@ -311,14 +319,17 @@
   var LAST_KEY = "scentty.last";
 
   function saveLast(res) {
+    var saved = res.presetId ? { preset: res.presetId } : { code: S.encodeCode(res) };
+    saved.name = res.profile.name; saved.at = Date.now();
     try {
-      localStorage.setItem(LAST_KEY, JSON.stringify({ code: S.encodeCode(res), name: res.profile.name, at: Date.now() }));
+      localStorage.setItem(LAST_KEY, JSON.stringify(saved));
     } catch (e) { /* storage blocked: the code on screen still works */ }
   }
   function loadLast() {
     try {
       var saved = JSON.parse(localStorage.getItem(LAST_KEY) || "null");
-      return saved && S.decodeCode(QUIZ, saved.code);
+      if (!saved) return null;
+      return saved.preset ? S.presetResult(QUIZ, saved.preset) : S.decodeCode(QUIZ, saved.code);
     } catch (e) { return null; }
   }
 
@@ -330,6 +341,24 @@
     $("w-code-toggle").hidden = false;
     $("w-code-error").hidden = true;
     $("w-code").value = "";
+  }
+
+  // Preset cards on the welcome screen (content from quiz.js).
+  function renderPresets() {
+    var list = $("w-presets");
+    list.innerHTML = "";
+    (QUIZ.presets || []).forEach(function (p) {
+      var bar = S.SCENTS.map(function (k) {
+        return '<i style="flex:' + p.mix[k] + ";background:" + color(k) + '"></i>';
+      }).join("");
+      var li = el("li", "", '<button class="preset" data-preset="' + esc(p.id) + '">' +
+        '<span class="preset__name">' + esc(p.name) + "</span>" +
+        '<span class="preset__line">' + esc(p.tagline) + "</span>" +
+        '<span class="preset__bar" aria-hidden="true">' + bar + "</span>" +
+        '<span class="preset__strength">' + STRENGTH_LABELS[p.strength] + "</span>" +
+        "</button>");
+      list.appendChild(li);
+    });
   }
 
   function showCodeEntry() {
@@ -496,7 +525,10 @@
   function finish() {
     stopLoops();
     $("d-name").textContent = state.result.profile.name;
-    $("d-code").textContent = S.encodeCode(state.result);
+    var code = S.encodeCode(state.result);
+    $("d-code").innerHTML = code
+      ? 'Recipe code: <b class="code-inline">' + esc(code) + "</b><br>Screenshot it to make this bottle again."
+      : "Want it again? <b>" + esc(state.result.profile.name) + "</b> is always on the front page.";
     var fill = $("d-fill"), r = state.result.recipe;
     fill.innerHTML = "";
     PUMP_ORDER.forEach(function (k) {
@@ -531,11 +563,14 @@
 
   $("w-code-form").addEventListener("submit", submitCode);
   $("w-code").addEventListener("input", function () { $("w-code-error").hidden = true; });
+  renderPresets();
   refreshWelcome();
 
   document.addEventListener("click", function (e) {
     var answer = e.target.closest(".answer");
     if (answer) return pickAnswer(+answer.dataset.index, answer);
+    var preset = e.target.closest("[data-preset]");
+    if (preset) { var pr = S.presetResult(QUIZ, preset.dataset.preset); if (pr) showSaved(pr); return; }
     var a = e.target.closest("[data-action]");
     if (a && actions[a.dataset.action]) actions[a.dataset.action]();
   });

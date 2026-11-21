@@ -106,6 +106,19 @@ var SCENTTY_SCORING = (function () {
     return PAIR[[ranked[0], ranked[1]].sort().join("+")];
   }
 
+  // A preset from quiz.presets as a result (same shape the result screen uses),
+  // or null if there's no preset with that id.
+  function presetResult(quiz, id) {
+    var p = (quiz.presets || []).filter(function (x) { return x.id === id; })[0];
+    if (!p) return null;
+    return {
+      profileId: p.id,
+      presetId: p.id,
+      profile: { name: p.name, tagline: p.tagline, description: p.description, why: p.why },
+      recipe: recipeFromPercents(p.mix, p.strength),
+    };
+  }
+
   // Everything the result screen needs, in one call.
   function result(quiz, answers, strength) {
     var scores = tally(quiz, answers);
@@ -152,7 +165,9 @@ var SCENTTY_SCORING = (function () {
     return [CODE_PROFILES.indexOf(profileId), STRENGTH_ORDER.indexOf(strength), (o / 10) | 0, o % 10, (l / 10) | 0, l % 10];
   }
 
+  // Presets have no code (they're always on the welcome screen): returns null.
   function encodeCode(res) {
+    if (!CODE_WORDS[res.profileId]) return null;
     var r = res.recipe;
     var o = Math.round(r.shares.orange * 100), l = Math.round(r.shares.lavender * 100);
     var check = damm(codeDigits(res.profileId, o, l, r.strength));
@@ -183,8 +198,8 @@ var SCENTTY_SCORING = (function () {
   return {
     SCENTS: SCENTS, BLEND: BLEND,
     tally: tally, proportions: proportions, shares: shares, wholePercents: wholePercents,
-    recipe: recipe, archetype: archetype, result: result,
-    encodeCode: encodeCode, decodeCode: decodeCode,
+    recipe: recipe, recipeFromPercents: recipeFromPercents, archetype: archetype, result: result,
+    presetResult: presetResult, encodeCode: encodeCode, decodeCode: decodeCode,
   };
 })();
 

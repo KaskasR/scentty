@@ -322,6 +322,63 @@ var SCENTTY_QUIZ = {
       why: "An even split of all three: bright top, calm heart, warm base, none of them shouting over the others.",
     },
   },
+
+  // Presets on the welcome screen: one tap, no quiz. `mix` is whole percents of
+  // the scent portion (must add to 100, each at least 10); `strength` is
+  // whisper / signature / bold. `tagline` doubles as the line on the card, so
+  // keep it short. Checked by tools/simulate.js.
+  presets: [
+    {
+      id: "dateNight",
+      name: "Date Night",
+      tagline: "Warm and close.",
+      description:
+        "Something they only catch when they lean in, and then keep thinking about on the way home. Unhurried, a little mysterious, and very much on purpose.",
+      why: "Cedarwood leads, deep and warm, with lavender softening the edges and a touch of orange so it never feels heavy. Bold, because tonight's the night.",
+      mix: { orange: 20, lavender: 30, cedar: 50 },
+      strength: "bold",
+    },
+    {
+      id: "beachDay",
+      name: "Beach Day",
+      tagline: "Bright and easy, gone by sunset.",
+      description:
+        "Sunscreen, a cooler, somebody's speaker playing the same five songs. A scent that keeps up with you and doesn't make a big deal about it.",
+      why: "Mostly sweet orange, the brightest note, with a little lavender and cedar so it lasts past the first swim. A whisper, so it stays light in the heat.",
+      mix: { orange: 60, lavender: 25, cedar: 15 },
+      strength: "whisper",
+    },
+    {
+      id: "nightOut",
+      name: "Night Out",
+      tagline: "Loud, warm, built to last.",
+      description:
+        "Pregame to last call to the late-night food run. This one's still going when you are, and it walks into every room a step ahead of you.",
+      why: "Orange up top for the energy, cedar underneath to carry it all night, lavender kept to a minimum. Bold, obviously.",
+      mix: { orange: 50, lavender: 15, cedar: 35 },
+      strength: "bold",
+    },
+    {
+      id: "bigInterview",
+      name: "Big Interview",
+      tagline: "Clean, steady, put together.",
+      description:
+        "Firm handshake, ironed shirt, answers you actually practiced. Noticeable enough to be memorable, quiet enough that nobody could hold it against you.",
+      why: "A balanced blend leaning on cedar for calm confidence, with orange to keep it fresh. Signature strength: present, not loud.",
+      mix: { orange: 35, lavender: 25, cedar: 40 },
+      strength: "signature",
+    },
+    {
+      id: "sundayReset",
+      name: "Sunday Reset",
+      tagline: "Soft and calm, nowhere to be.",
+      description:
+        "Clean sheets, slow coffee, phone face down. For the days where the whole plan is doing absolutely nothing, and doing it well.",
+      why: "Lavender-forward, the calmest note of the three, with orange and cedar in equal parts underneath. A whisper, just for you.",
+      mix: { orange: 20, lavender: 60, cedar: 20 },
+      strength: "whisper",
+    },
+  ],
 };
 
 if (typeof module !== "undefined") module.exports = SCENTTY_QUIZ;

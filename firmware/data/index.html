@@ -33,6 +33,10 @@
         <button class="btn btn--ghost btn--again" data-action="last-blend" id="w-last" hidden>
           Make my last blend again<small id="w-last-name"></small>
         </button>
+        <section class="presets" aria-labelledby="w-presets-head">
+          <h2 class="presets__head" id="w-presets-head">Or skip the quiz</h2>
+          <ul class="presets__grid" id="w-presets"></ul>
+        </section>
         <button class="linkish" data-action="show-code" id="w-code-toggle">Already have a recipe code?</button>
         <form class="code-entry" id="w-code-form" hidden autocomplete="off" novalidate>
           <label class="code-entry__label" for="w-code">Your recipe code</label>
@@ -77,7 +81,7 @@
       </div>
 
       <article class="result" id="result" hidden>
-        <p class="kicker">Your scent profile</p>
+        <p class="kicker" id="r-kicker">Your scent profile</p>
         <h2 class="result__name" id="r-name"></h2>
         <p class="result__tagline" id="r-tagline"></p>
 
@@ -100,14 +104,14 @@
         </section>
 
         <section class="card code-card">
-          <p class="kicker">Your recipe code</p>
+          <p class="kicker" id="r-code-kicker">Your recipe code</p>
           <p class="code-card__code" id="r-code"></p>
-          <p class="muted">Screenshot this. Next time, tap <b>Already have a recipe code?</b> and get this exact bottle again, no quiz.</p>
+          <p class="muted" id="r-code-note"></p>
         </section>
 
         <div class="actions actions--sticky">
           <button class="btn btn--primary" data-action="to-ready">Make my bottle</button>
-          <button class="btn btn--ghost" data-action="retake">Retake the quiz</button>
+          <button class="btn btn--ghost" data-action="retake" id="r-retake">Retake the quiz</button>
         </div>
       </article>
     </section>
@@ -189,7 +193,7 @@
         <li>Give it a few minutes. It only gets better.</li>
       </ol>
       <p class="muted">Profile: <b id="d-name"></b></p>
-      <p class="muted done-code">Recipe code: <b class="code-inline" id="d-code"></b><br>Screenshot it to make this bottle again.</p>
+      <p class="muted done-code" id="d-code"></p>
       <div class="actions">
         <button class="btn btn--primary" data-action="restart">Start over</button>
       </div>

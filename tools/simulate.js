@@ -143,6 +143,22 @@ for (const bad of ["", "GOLD", "GOLD-4231-X0", "NOPE-4231-S0", "GOLD-0931-S0", "
   if (S.decodeCode(QUIZ, bad)) codeProblems.push({ what: "garbage accepted", code: bad });
 }
 
+// ---- presets: valid mixes, valid pours, unique ids -------------------------
+const presetProblems = [], presetIds = new Set();
+for (const p of QUIZ.presets || []) {
+  const m = p.mix || {}, sum = S.SCENTS.reduce((a, k) => a + (m[k] || 0), 0);
+  if (presetIds.has(p.id)) presetProblems.push(`${p.id}: duplicate id`);
+  presetIds.add(p.id);
+  if (QUIZ.profiles[p.id]) presetProblems.push(`${p.id}: same id as a quiz profile`);
+  if (!p.name || !p.tagline || !p.description || !p.why) presetProblems.push(`${p.id}: missing copy`);
+  if (sum !== 100) presetProblems.push(`${p.id}: mix adds to ${sum}, not 100`);
+  if (S.SCENTS.some((k) => !Number.isInteger(m[k]) || m[k] < S.BLEND.floor * 100)) presetProblems.push(`${p.id}: every scent needs a whole percent ≥ 10`);
+  if (!(p.strength in S.BLEND.strengths)) { presetProblems.push(`${p.id}: unknown strength ${p.strength}`); continue; }
+  const r = S.presetResult(QUIZ, p.id).recipe;
+  const total = r.orange_ml + r.lavender_ml + r.cedar_ml + r.alcohol_ml;
+  if (Math.abs(total - S.BLEND.blendMl) > 1e-9) presetProblems.push(`${p.id}: pours ${total} mL`);
+}
+
 // ---- optional threshold sweep -----------------------------------------
 function score(th) {
   // Average, over the persona crowds, of the worst profile's distance from an
@@ -223,5 +239,13 @@ console.log(`\nQUIZ BIAS CHECK: avg raw share for a random answerer → orange $
 
 console.log(`\nINVARIANTS: ${checked} recipes checked (24.0 mL total, 0.1 mL steps, ≥10% floor, no negatives) → ${problems.length ? "FAIL" : "all OK"}`);
 console.log(`RECIPE CODES: ${codesChecked} round trips (${codeSeen.size} distinct codes), ${typosChecked} typos/swaps → ${codeProblems.length ? "FAIL" : "all OK"}`);
+console.log("\nPRESETS");
+for (const p of QUIZ.presets || []) {
+  const r = S.presetResult(QUIZ, p.id).recipe;
+  console.log(`  ${p.name.padEnd(16)} ${p.strength.padEnd(10)} ${S.SCENTS.map((k) => p.mix[k]).join("/").padEnd(9)} → ` +
+    [r.orange_ml, r.lavender_ml, r.cedar_ml, r.alcohol_ml].map((v) => v.toFixed(1).padStart(5)).join("") + "  (o/l/c/alc mL)");
+}
+console.log(`PRESET CHECKS: ${(QUIZ.presets || []).length} presets → ${presetProblems.length ? "FAIL" : "all OK"}`);
 if (problems.length) { console.log(problems.slice(0, 5)); process.exit(1); }
+if (presetProblems.length) { console.log(presetProblems); process.exit(1); }
 if (codeProblems.length) { console.log(codeProblems.slice(0, 5)); process.exit(1); }
