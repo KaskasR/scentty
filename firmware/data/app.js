@@ -47,16 +47,7 @@
   }
   var reducedMotion = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // Integer percentages that always add up to 100 (largest remainder).
-  function wholePercents(shares) {
-    var keys = S.SCENTS, raw = keys.map(function (k) { return shares[k] * 100; });
-    var out = raw.map(Math.floor), left = 100 - out.reduce(function (a, b) { return a + b; }, 0);
-    raw.map(function (v, i) { return [v - out[i], i]; })
-      .sort(function (a, b) { return b[0] - a[0]; })
-      .slice(0, left).forEach(function (r) { out[r[1]] += 1; });
-    var res = {}; keys.forEach(function (k, i) { res[k] = out[i]; });
-    return res;
-  }
+  var wholePercents = S.wholePercents; // integer percents adding to 100
 
   // ---- screens ---------------------------------------------------------------
   var current = "welcome";
@@ -225,6 +216,8 @@
       list.appendChild(row);
     });
 
+    $("r-code").textContent = S.encodeCode(res);
+
     // stagger the result blocks in
     Array.prototype.forEach.call($("result").children, function (c, n) { c.style.setProperty("--i", n); });
     drawTriangle();
@@ -299,6 +292,61 @@
     S.SCENTS.forEach(function (k) { root.setProperty("--amb-" + k, "1"); });
   }
 
+  // Straight to a result from a recipe code (no quiz, no build-up animation).
+  function showSaved(res) {
+    stopLoops();
+    state.answers = []; state.strength = res.recipe.strength; state.result = res;
+    renderResult(res);
+    $("buildup").hidden = true;
+    $("result").hidden = false;
+    show("reveal");
+    setAmbient(res.recipe.shares);
+    placeDot(res.recipe.shares);
+  }
+
+  // ---- recipe codes + "last blend" ---------------------------------------------------
+  // The code is the real save: guests screenshot it. localStorage is only a bonus,
+  // because iOS's captive-portal mini-browser wipes storage when it closes
+  // (SPEC §5). Every access is guarded so blocked storage just hides the button.
+  var LAST_KEY = "scentty.last";
+
+  function saveLast(res) {
+    try {
+      localStorage.setItem(LAST_KEY, JSON.stringify({ code: S.encodeCode(res), name: res.profile.name, at: Date.now() }));
+    } catch (e) { /* storage blocked: the code on screen still works */ }
+  }
+  function loadLast() {
+    try {
+      var saved = JSON.parse(localStorage.getItem(LAST_KEY) || "null");
+      return saved && S.decodeCode(QUIZ, saved.code);
+    } catch (e) { return null; }
+  }
+
+  function refreshWelcome() {
+    var last = loadLast();
+    $("w-last").hidden = !last;
+    if (last) $("w-last-name").textContent = last.profile.name + " · " + STRENGTH_LABELS[last.recipe.strength];
+    $("w-code-form").hidden = true;
+    $("w-code-toggle").hidden = false;
+    $("w-code-error").hidden = true;
+    $("w-code").value = "";
+  }
+
+  function showCodeEntry() {
+    $("w-code-toggle").hidden = true;
+    $("w-code-form").hidden = false;
+    $("w-code").focus();
+  }
+
+  function submitCode(e) {
+    e.preventDefault();
+    var res = S.decodeCode(QUIZ, $("w-code").value);
+    $("w-code-error").hidden = !!res;
+    if (!res) return;
+    $("w-code").blur();
+    showSaved(res);
+  }
+
   // ---- get ready + blending ---------------------------------------------------------------
   function toReady(notice) {
     stopLoops();
@@ -330,6 +378,7 @@
         startBtn.disabled = false;
         if (r.accepted) {
           state.job = r.job;
+          saveLast(state.result);
           resetMaking();
           show("making");
           poll(gen, 0);
@@ -447,6 +496,7 @@
   function finish() {
     stopLoops();
     $("d-name").textContent = state.result.profile.name;
+    $("d-code").textContent = S.encodeCode(state.result);
     var fill = $("d-fill"), r = state.result.recipe;
     fill.innerHTML = "";
     PUMP_ORDER.forEach(function (k) {
@@ -474,8 +524,14 @@
     "start-blend": startBlend,
     "leave-queue": function () { toReady(); },
     cancel: cancelTapped,
-    restart: function () { stopLoops(); resetAmbient(); show("welcome"); },
+    restart: function () { stopLoops(); resetAmbient(); refreshWelcome(); show("welcome"); },
+    "last-blend": function () { var res = loadLast(); if (res) showSaved(res); },
+    "show-code": showCodeEntry,
   };
+
+  $("w-code-form").addEventListener("submit", submitCode);
+  $("w-code").addEventListener("input", function () { $("w-code-error").hidden = true; });
+  refreshWelcome();
 
   document.addEventListener("click", function (e) {
     var answer = e.target.closest(".answer");

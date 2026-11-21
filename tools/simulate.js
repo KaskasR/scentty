@@ -97,6 +97,52 @@ for (const s of Object.values(crowds).flat()) {
   }
 }
 
+// ---- recipe codes: every result round-trips, typos get rejected -----------
+// A code must pour exactly the recipe the quiz gave (same mL to the 0.1), show the
+// same profile, and any single-character typo in its digits/strength must fail.
+let codesChecked = 0, typosChecked = 0, codeProblems = [];
+const codeSeen = new Set();
+const ALNUM = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+for (const s of Object.values(crowds).flat()) {
+  for (const st of STRENGTHS) {
+    const id = S.archetype(s, QUIZ.thresholds);
+    const res = { profileId: id, profile: QUIZ.profiles[id], recipe: S.recipe(s, st) };
+    const code = S.encodeCode(res);
+    codesChecked++;
+    const back = S.decodeCode(QUIZ, code);
+    const messy = S.decodeCode(QUIZ, " " + code.toLowerCase().replace(/-/g, " ") + " ");
+    const same = (d) => d && d.profileId === id &&
+      ["orange_ml", "lavender_ml", "cedar_ml", "alcohol_ml", "strength"].every((k) => d.recipe[k] === res.recipe[k]);
+    if (!same(back) || !same(messy)) codeProblems.push({ what: "round trip", code });
+    if (codeSeen.has(code)) continue; // typo check each distinct code once
+    codeSeen.add(code);
+    // every single-character change after the profile word (digits, strength, check)
+    const word = code.split("-")[0].length;
+    for (let i = word; i < code.length; i++) {
+      if (code[i] === "-") continue;
+      for (const ch of ALNUM) {
+        if (ch === code[i]) continue;
+        const typo = code.slice(0, i) + ch + code.slice(i + 1);
+        typosChecked++;
+        if (S.decodeCode(QUIZ, typo)) codeProblems.push({ what: "typo accepted", code, typo });
+      }
+    }
+    // swapping two neighbouring digits
+    const digits = code.replace(/\D/g, "");
+    for (let i = 0; i + 1 < digits.length; i++) {
+      if (digits[i] === digits[i + 1]) continue;
+      const sw = digits.slice(0, i) + digits[i + 1] + digits[i] + digits.slice(i + 2);
+      let n = 0;
+      const typo = code.replace(/\d/g, () => sw[n++]);
+      typosChecked++;
+      if (S.decodeCode(QUIZ, typo)) codeProblems.push({ what: "swap accepted", code, typo });
+    }
+  }
+}
+for (const bad of ["", "GOLD", "GOLD-4231-X0", "NOPE-4231-S0", "GOLD-0931-S0", "GOLD-4550-S0"]) {
+  if (S.decodeCode(QUIZ, bad)) codeProblems.push({ what: "garbage accepted", code: bad });
+}
+
 // ---- optional threshold sweep -----------------------------------------
 function score(th) {
   // Average, over the persona crowds, of the worst profile's distance from an
@@ -176,4 +222,6 @@ const mean = (k) => rs.reduce((a, p) => a + p[k], 0) / rs.length;
 console.log(`\nQUIZ BIAS CHECK: avg raw share for a random answerer → orange ${pct(mean("orange"))}, lavender ${pct(mean("lavender"))}, cedar ${pct(mean("cedar"))} (ideal 33.3% each)`);
 
 console.log(`\nINVARIANTS: ${checked} recipes checked (24.0 mL total, 0.1 mL steps, ≥10% floor, no negatives) → ${problems.length ? "FAIL" : "all OK"}`);
+console.log(`RECIPE CODES: ${codesChecked} round trips (${codeSeen.size} distinct codes), ${typosChecked} typos/swaps → ${codeProblems.length ? "FAIL" : "all OK"}`);
 if (problems.length) { console.log(problems.slice(0, 5)); process.exit(1); }
+if (codeProblems.length) { console.log(codeProblems.slice(0, 5)); process.exit(1); }

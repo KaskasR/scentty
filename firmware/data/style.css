@@ -267,6 +267,38 @@ b { font-weight: var(--fw-bold); }
 .screen--welcome .actions { margin-top: var(--sp-4); padding-top: 0; }
 .screen--welcome .fineprint { margin-top: var(--sp-3); }
 
+/* "make my last blend again" (only when this browser remembers one) */
+.btn--again { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding-top: var(--sp-2); padding-bottom: var(--sp-2); line-height: 1.15; }
+.btn--again small { font: var(--fw-medium) var(--fs-xs) / 1.2 var(--font-body); color: var(--c-ink-2); }
+
+/* recipe code entry */
+.linkish {
+  align-self: center;
+  min-height: 44px; padding: 0 var(--sp-3);
+  border: 0; background: none; cursor: pointer;
+  font: var(--fw-bold) var(--fs-sm) / 1 var(--font-body);
+  color: var(--c-ink-2);
+  text-decoration: underline; text-decoration-color: var(--c-line); text-underline-offset: 4px; text-decoration-thickness: 1.5px;
+}
+.linkish:focus-visible { outline: 3px solid var(--c-lavender); outline-offset: 2px; border-radius: var(--r-sm); }
+.code-entry { display: flex; flex-direction: column; gap: var(--sp-2); margin-top: var(--sp-2); text-align: left; animation: screen-in var(--dur-med) var(--ease-out) both; }
+.code-entry[hidden] { display: none; }
+.code-entry__label { font: var(--fw-bold) var(--fs-xs) / 1.4 var(--font-body); letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--c-ink-2); }
+.code-entry__row { display: flex; gap: var(--sp-2); }
+.code-entry__input {
+  flex: 1; min-width: 0; min-height: var(--tap);
+  padding: 0 var(--sp-4);
+  border: 0; border-radius: var(--r-pill);
+  background: var(--c-surface); box-shadow: inset 0 0 0 1.5px var(--c-line);
+  color: var(--c-ink);
+  font: var(--fw-bold) var(--fs-md) / 1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; /* 16px+ so iOS doesn't zoom */
+  letter-spacing: 0.04em; text-transform: uppercase;
+}
+.code-entry__input::placeholder { color: var(--c-ink-3); font-weight: var(--fw-regular); }
+.code-entry__input:focus { outline: none; box-shadow: inset 0 0 0 2px var(--c-lavender); }
+.code-entry__go { flex: none; padding: 0 var(--sp-5); }
+.code-entry__error { font-size: var(--fs-sm); color: #7d2417; }
+
 /* ---- 2. questions -------------------------------------------------------------- */
 .qbar { display: flex; align-items: center; gap: var(--sp-3); }
 .progress {
@@ -408,6 +440,20 @@ b { font-weight: var(--fw-bold); }
 .share__bar { display: block; height: 5px; margin-top: var(--sp-2); border-radius: var(--r-pill); background: rgba(255,255,255,0.7); overflow: hidden; }
 .share__bar i { display: block; height: 100%; width: var(--w); background: var(--col); border-radius: inherit; animation: grow 1s var(--ease-out) both 0.6s; transform-origin: left; }
 @keyframes grow { from { transform: scaleX(0); } }
+
+/* recipe code */
+.code-card { padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-2); }
+.code-card__code, .code-inline { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; letter-spacing: 0.04em; }
+.code-card__code {
+  align-self: flex-start;
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-md);
+  background: var(--c-surface-2);
+  font-size: var(--fs-lg); font-weight: var(--fw-bold);
+  user-select: all; -webkit-user-select: all;
+}
+.code-card .muted { font-size: var(--fs-sm); }
+.done-code { margin-top: var(--sp-2); font-size: var(--fs-sm); }
 
 /* recipe */
 .recipe { padding: var(--sp-4) var(--sp-4) var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-3); }

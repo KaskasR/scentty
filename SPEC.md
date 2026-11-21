@@ -34,6 +34,7 @@ Perfume structure (used in quiz copy): orange = **top note** (smelled first, fad
 - **Scent shares:** every blend contains **at least 10% of each scent** (of the scent portion) so it has top, heart, and base notes. The remaining 70% is split by quiz score:
   `share_i = 0.10 + 0.70 * (score_i / (score_orange + score_lavender + score_cedar))`
   `mL_i = scentTotal * share_i`
+- **Shares are rounded to whole percents** (largest remainder, so they add to 100) before the mL math. The pour then matches the percents on the result screen, and a recipe code (§5) reproduces it exactly. Rounding never takes a share below the 10% floor. Changed Nov 20; compared with the unrounded math it moves any one pump by at most 0.2 mL.
 - Smallest possible dispense: Whisper × 10% floor = **0.72 mL**. Pumps must be calibrated so this is accurate.
 - Round each pump volume to 0.1 mL; any rounding remainder goes to alcohol (or the largest scent at Bold).
 
@@ -77,6 +78,8 @@ Busy handling: one blend at a time. If the machine is busy, the phone shows "you
   - **Design tokens as CSS variables** (colors, radii, spacing, type scale, motion) so visual polish can be layered on later without restructuring.
   - **Laptop/mock mode:** when the API isn't reachable (or `?mock=1`), the app fakes the machine (fake status/progress) so the team can test the full flow in any browser.
   - Must work inside iOS's captive-portal mini-browser: single page, no reliance on localStorage, no downloads/new tabs.
+  - **Recipe codes** (added Nov 20): the result and done screens show a code like `GOLD-4231-S8` (profile word, orange %, lavender %, cedar = the rest, strength W/S/B, Damm check digit). "Already have a recipe code?" on the welcome screen skips the quiz and goes straight to that result. Guests save it by screenshotting, since the captive-portal browser forgets everything. A code stores the recipe, not the answers, so quiz edits never change what an old code pours. Profile words and strength letters are permanent (`CODE_WORDS` in `scoring.js`). Tests: `node tools/simulate.js` round-trips every simulated result and checks that typos get rejected.
+  - **"Make my last blend again"** button on the welcome screen: a bonus only. The code is saved to localStorage when a pour is accepted. The button shows only if storage survived (e.g. a real browser) and the saved code still decodes.
 - **API** (JSON). Contract decided Nov 9; the web app (`firmware/data/api.js`) is written against exactly this, and its mock implements the same shapes.
   - `GET /api/status` → `{state, job, step, pumps, error}`
     - `state`: `idle` | `dispensing` | `done` | `error` | `busy` (`busy` = operator is running pumps by hand)

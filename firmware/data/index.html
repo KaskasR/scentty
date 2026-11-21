@@ -30,6 +30,19 @@
       <p class="muted"><span data-bind="question-count">25</span> quick questions. Then watch your bottle get blended right in front of you.</p>
       <div class="actions">
         <button class="btn btn--primary" data-action="start">Find your scent</button>
+        <button class="btn btn--ghost btn--again" data-action="last-blend" id="w-last" hidden>
+          Make my last blend again<small id="w-last-name"></small>
+        </button>
+        <button class="linkish" data-action="show-code" id="w-code-toggle">Already have a recipe code?</button>
+        <form class="code-entry" id="w-code-form" hidden autocomplete="off" novalidate>
+          <label class="code-entry__label" for="w-code">Your recipe code</label>
+          <div class="code-entry__row">
+            <input class="code-entry__input" id="w-code" type="text" placeholder="GOLD-4231-S8"
+                   autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="go" maxlength="24">
+            <button class="btn btn--primary code-entry__go" type="submit">Go</button>
+          </div>
+          <p class="code-entry__error" id="w-code-error" role="alert" hidden>That code doesn't look right. Check it against your screenshot.</p>
+        </form>
       </div>
       <p class="fineprint">Theta Tau · Fall '26 build project</p>
     </section>
@@ -84,6 +97,12 @@
           </header>
           <ul class="recipe__list" id="r-recipe"></ul>
           <p class="fineprint">24 mL total, measured to 0.1 mL</p>
+        </section>
+
+        <section class="card code-card">
+          <p class="kicker">Your recipe code</p>
+          <p class="code-card__code" id="r-code"></p>
+          <p class="muted">Screenshot this. Next time, tap <b>Already have a recipe code?</b> and get this exact bottle again, no quiz.</p>
         </section>
 
         <div class="actions actions--sticky">
@@ -170,6 +189,7 @@
         <li>Give it a few minutes. It only gets better.</li>
       </ol>
       <p class="muted">Profile: <b id="d-name"></b></p>
+      <p class="muted done-code">Recipe code: <b class="code-inline" id="d-code"></b><br>Screenshot it to make this bottle again.</p>
       <div class="actions">
         <button class="btn btn--primary" data-action="restart">Start over</button>
       </div>

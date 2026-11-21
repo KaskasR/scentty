@@ -30,24 +30,44 @@ var SCENTTY_SCORING = (function () {
     return p;
   }
 
-  // Scent shares with the 10% floor: share = floor + (1 − 3·floor) · p.
-  function shares(scores) {
-    var p = proportions(scores), out = {};
+  // Integer percentages that always add up to 100 (largest remainder).
+  function wholePercents(fracs) {
+    var raw = SCENTS.map(function (k) { return fracs[k] * 100; });
+    var out = raw.map(Math.floor), left = 100 - out.reduce(function (a, b) { return a + b; }, 0);
+    raw.map(function (v, i) { return [v - out[i], i]; })
+      .sort(function (a, b) { return b[0] - a[0]; })
+      .slice(0, left).forEach(function (r) { out[r[1]] += 1; });
+    var res = {}; SCENTS.forEach(function (k, i) { res[k] = out[i]; });
+    return res;
+  }
+
+  // Scent shares with the 10% floor: share = floor + (1 − 3·floor) · p, then
+  // rounded to whole percents (SPEC §2) so the pour matches what the result
+  // screen shows and a recipe code reproduces it exactly. Rounding down never
+  // takes a share below 10%, so the floor still holds.
+  function percents(scores) {
+    var p = proportions(scores), raw = {};
     var spread = 1 - SCENTS.length * BLEND.floor;
-    SCENTS.forEach(function (k) { out[k] = BLEND.floor + spread * p[k]; });
+    SCENTS.forEach(function (k) { raw[k] = BLEND.floor + spread * p[k]; });
+    return wholePercents(raw);
+  }
+
+  function shares(scores) {
+    var pct = percents(scores), out = {};
+    SCENTS.forEach(function (k) { out[k] = pct[k] / 100; });
     return out;
   }
 
-  // The pump recipe in mL, rounded to 0.1 mL. Works in integer tenths so
+  // The pump recipe in mL, rounded to 0.1 mL, from whole-percent shares
+  // ({orange, lavender, cedar} adding to 100). Works in integer tenths so
   // floating-point error can't leave a bottle at 23.9999 mL.
-  function recipe(scores, strength) {
-    var pct = BLEND.strengths[strength];
-    if (pct === undefined) throw new Error("unknown strength: " + strength);
-    var sh = shares(scores);
+  function recipeFromPercents(pct, strength) {
+    var oil = BLEND.strengths[strength];
+    if (oil === undefined) throw new Error("unknown strength: " + strength);
     var totalT = Math.round(BLEND.blendMl * 10);
-    var scentT = Math.round((BLEND.blendMl * pct / BLEND.oilInBase) * 10);
-    var t = {};
-    SCENTS.forEach(function (k) { t[k] = Math.round(scentT * sh[k]); });
+    var scentT = Math.round((BLEND.blendMl * oil / BLEND.oilInBase) * 10);
+    var t = {}, sh = {};
+    SCENTS.forEach(function (k) { t[k] = Math.round(scentT * pct[k] / 100); sh[k] = pct[k] / 100; });
     var sumT = t.orange + t.lavender + t.cedar;
     var alcoholT = totalT - sumT;
     if (scentT >= totalT) {
@@ -62,8 +82,12 @@ var SCENTTY_SCORING = (function () {
       cedar_ml: t.cedar / 10,
       alcohol_ml: alcoholT / 10,
       strength: strength,
-      shares: sh, // fraction of the scent portion, before rounding
+      shares: sh, // fraction of the scent portion (whole percents)
     };
+  }
+
+  function recipe(scores, strength) {
+    return recipeFromPercents(percents(scores), strength);
   }
 
   var SINGLE = { orange: "sunchaser", lavender: "dreamer", cedar: "wanderer" };
@@ -94,10 +118,73 @@ var SCENTTY_SCORING = (function () {
     };
   }
 
+  // ---- recipe codes ------------------------------------------------------------
+  // A result as a short code the guest screenshots, e.g. "GOLD-4231-S8":
+  //   GOLD  profile word        42  orange %       31  lavender %   (cedar = the rest)
+  //   S     strength (W/S/B)    7   Damm check digit over all of it
+  // The code stores the recipe itself, not quiz answers, so editing the quiz or
+  // its thresholds never changes what an old code pours. Never renumber these.
+  var CODE_WORDS = {
+    sunchaser: "SUN", dreamer: "DREAM", wanderer: "WANDER",
+    goldenHour: "GOLD", gardenParty: "GARDEN", oldSoul: "SOUL", harmony: "HARMONY",
+  };
+  var CODE_PROFILES = ["sunchaser", "dreamer", "wanderer", "goldenHour", "gardenParty", "oldSoul", "harmony"];
+  var CODE_STRENGTHS = { whisper: "W", signature: "S", bold: "B" };
+  var STRENGTH_ORDER = ["whisper", "signature", "bold"];
+
+  // Damm algorithm: one check digit that catches every single-digit typo and
+  // every swap of two neighbouring digits.
+  var DAMM = [
+    [0, 3, 1, 7, 5, 9, 8, 6, 4, 2], [7, 0, 9, 2, 1, 5, 4, 8, 6, 3],
+    [4, 2, 0, 6, 8, 7, 1, 3, 5, 9], [1, 7, 5, 0, 9, 8, 3, 4, 2, 6],
+    [6, 1, 2, 3, 0, 4, 5, 9, 7, 8], [3, 6, 7, 4, 2, 0, 9, 5, 8, 1],
+    [5, 8, 6, 9, 7, 2, 0, 1, 3, 4], [8, 9, 4, 5, 3, 6, 2, 0, 1, 7],
+    [9, 4, 3, 8, 6, 1, 7, 2, 0, 5], [2, 5, 8, 1, 4, 3, 6, 7, 9, 0],
+  ];
+  function damm(digits) {
+    return digits.reduce(function (c, d) { return DAMM[c][d]; }, 0);
+  }
+  // Everything the check digit covers: profile, strength, both percents. The
+  // percents go last so the digits sit in the same order as on screen, with the
+  // check digit right after them: that's what lets Damm catch a swap of the last
+  // percent digit and the check digit.
+  function codeDigits(profileId, o, l, strength) {
+    return [CODE_PROFILES.indexOf(profileId), STRENGTH_ORDER.indexOf(strength), (o / 10) | 0, o % 10, (l / 10) | 0, l % 10];
+  }
+
+  function encodeCode(res) {
+    var r = res.recipe;
+    var o = Math.round(r.shares.orange * 100), l = Math.round(r.shares.lavender * 100);
+    var check = damm(codeDigits(res.profileId, o, l, r.strength));
+    var pad = function (n) { return (n < 10 ? "0" : "") + n; };
+    return CODE_WORDS[res.profileId] + "-" + pad(o) + pad(l) + "-" + CODE_STRENGTHS[r.strength] + check;
+  }
+
+  // Forgiving about case, spaces and dashes. Returns the same shape as result()
+  // (minus scores), or null if the code isn't valid.
+  function decodeCode(quiz, str) {
+    var m = /^([A-Z]+)(\d\d)(\d\d)([WSB])(\d)$/.exec(String(str).toUpperCase().replace(/[\s\-_.·]/g, ""));
+    if (!m) return null;
+    var profileId = null;
+    for (var id in CODE_WORDS) if (CODE_WORDS[id] === m[1]) profileId = id;
+    var strength = null;
+    for (var st in CODE_STRENGTHS) if (CODE_STRENGTHS[st] === m[4]) strength = st;
+    var o = +m[2], l = +m[3], c = 100 - o - l;
+    if (!profileId || !strength || !quiz.profiles[profileId]) return null;
+    if (o < BLEND.floor * 100 || l < BLEND.floor * 100 || c < BLEND.floor * 100) return null;
+    if (damm(codeDigits(profileId, o, l, strength)) !== +m[5]) return null;
+    return {
+      profileId: profileId,
+      profile: quiz.profiles[profileId],
+      recipe: recipeFromPercents({ orange: o, lavender: l, cedar: c }, strength),
+    };
+  }
+
   return {
     SCENTS: SCENTS, BLEND: BLEND,
-    tally: tally, proportions: proportions, shares: shares,
+    tally: tally, proportions: proportions, shares: shares, wholePercents: wholePercents,
     recipe: recipe, archetype: archetype, result: result,
+    encodeCode: encodeCode, decodeCode: decodeCode,
   };
 })();
 
